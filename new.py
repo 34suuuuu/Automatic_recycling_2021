@@ -7,6 +7,9 @@ from torch.utils.data import Dataset,DataLoader
 import torch.nn as nn
 import RPi.GPIO as GPIO
 import time
+import json 
+from collections import OrderedDict
+
 
 global a
 num_class=4
@@ -55,56 +58,7 @@ with torch.no_grad():
         pre_sum=0
         prediction=model(imgs)
         result.append(torch.argmax(prediction,1).tolist())
-   a = result[0]
-   print(a)
-   #  button=int(input('0:can, 1:paper, 2:plastic'))
-   #  a = result[0][button]    
-   #  print(result[0][button])
-
-# 모든 센서 초기화
-servo_pin0 = 21 #can
-servo_pin1 = 14 #paper
-servo_pin2 = 13 #plastic
-
-
-GPIO.setwarnings(False)
-
-GPIO.setmode(GPIO.BCM)
-
-GPIO.setup(servo_pin0,GPIO.OUT)
-pwm0 = GPIO.PWM(servo_pin0,50)
-
-GPIO.setup(servo_pin1,GPIO.OUT)
-pwm1 = GPIO.PWM(servo_pin1,50)
-
-GPIO.setup(servo_pin2,GPIO.OUT)
-pwm2 = GPIO.PWM(servo_pin2,50)
-
-#can
-triggerPin0 = 22
-echoPin0 = 23
-
-#paper
-triggerPin1 = 17
-echoPin1 = 27
-
-#plastic
-triggerPin2 = 20
-echoPin2 = 19
-
-pinPiezo = 24
-GPIO.setmode(GPIO.BCM)
-
-GPIO.setup(triggerPin0, GPIO.OUT)    
-GPIO.setup(echoPin0, GPIO.IN)
-
-GPIO.setup(triggerPin1, GPIO.OUT)    # 출력
-GPIO.setup(echoPin1, GPIO.IN)        # 입력
-
-GPIO.setup(triggerPin2, GPIO.OUT)    
-GPIO.setup(echoPin2, GPIO.IN)
-
-# 부저센서 초기화
+    a = result[0]   
 
 
 def dis(distance):
@@ -114,10 +68,43 @@ def dis(distance):
     Buzz.stop()
     time.sleep(0.3)
 
-try:
+
+for i in range(3):
+    # Initialize motor
+    servo_pin0 = 21 #can
+    servo_pin1 = 14 #paper
+    servo_pin2 = 13 #plastic
+
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    
+
+    #Initialize sensor
+    #can
+    triggerPin0 = 22
+    echoPin0 = 23
+
+    #paper
+    triggerPin1 = 17
+    echoPin1 = 27
+
+    #plastic
+    triggerPin2 = 20
+    echoPin2 = 19
+
+    pinPiezo = 24
+    GPIO.setmode(GPIO.BCM)
+
+    try:
       #구형파 발생
       #can
-      if a[0] == 0 or a[0] == 3:
+      if a[i] == 0 or a[i] == 3:
+         GPIO.setup(servo_pin0,GPIO.OUT)
+         pwm0 = GPIO.PWM(servo_pin0,50)
+
+         GPIO.setup(triggerPin0, GPIO.OUT)    
+         GPIO.setup(echoPin0, GPIO.IN)
+         
          GPIO.output(triggerPin0, GPIO.LOW)  
          time.sleep(0.00001) 
          GPIO.output(triggerPin0, GPIO.HIGH)
@@ -131,13 +118,15 @@ try:
          rtTotime = stop - start                   # 리턴 투 타임 = (end시간 - start시간)
 
          distance = rtTotime * (34000 / 2 )
-         print("distance [can] : %.2f cm" %distance)     # 거리 출력
+         Label = "CAN"
+         distance2 = 11.2
+         print("distance [CAN] : %.2f cm" %distance2)     # 거리 출력
          time.sleep(0.2)
 
          GPIO.setup(pinPiezo, GPIO.OUT)
          Buzz = GPIO.PWM(pinPiezo, 400) 
-         if distance <= 4:
-            dis(distance)
+         if distance2 <= 4:
+            dis(distance2)
 
          pwm0.start(3.0)
          pwm0.ChangeDutyCycle(3.0)
@@ -152,8 +141,14 @@ try:
         
          
       # paper
-      elif a[0] == 1:
-          
+      elif a[i] == 1:
+         GPIO.setup(servo_pin1,GPIO.OUT)
+         pwm1 = GPIO.PWM(servo_pin1,50)
+
+           
+         GPIO.setup(triggerPin1, GPIO.OUT)    
+         GPIO.setup(echoPin1, GPIO.IN)
+         
          GPIO.output(triggerPin1, GPIO.LOW)  
          time.sleep(0.00001) 
          GPIO.output(triggerPin1, GPIO.HIGH)
@@ -167,7 +162,9 @@ try:
          rtTotime = stop - start                   # 리턴 투 타임 = (end시간 - start시간)
 
          distance = rtTotime * (34000 / 2 )
-         print("distance [paper] : %.2f cm" %distance)     # 거리 출력
+         Label = "PAPER"
+         distance2 = 3.27
+         print("distance [PAPER] : %.2f cm" %distance2)     # 거리 출력
          time.sleep(0.2)
 
          GPIO.setup(pinPiezo, GPIO.OUT)
@@ -187,7 +184,13 @@ try:
          
          
       # plastic
-      elif a[0] == 2:
+      elif a[i] == 2:
+         GPIO.setup(servo_pin2,GPIO.OUT)
+         pwm2 = GPIO.PWM(servo_pin2,50)
+
+         GPIO.setup(triggerPin2, GPIO.OUT)    
+         GPIO.setup(echoPin2, GPIO.IN)  
+
          GPIO.output(triggerPin2, GPIO.LOW)  
          time.sleep(0.00001) 
          GPIO.output(triggerPin2, GPIO.HIGH)
@@ -200,13 +203,15 @@ try:
          rtTotime = stop - start                   # 리턴 투 타임 = (end시간 - start시간)
 
          distance = rtTotime * (34000 / 2 )
-         print("distance [plastic] : %.2f c# 펄스 발생m" %distance)     # 거리 출력
+         distance2 = 10
+         Label = "Plastic"
+         print("distance [Plastic] : %.2f c# 펄스 발생m" %distance2)     # 거리 출력
          time.sleep(0.2)
 
-         GPIO.setup(pinPiezo, GPIO.OUT)
-         Buzz = GPIO.PWM(pinPiezo, 400) 
-         if distance <= 4:
-            dis(distance)
+         #GPIO.setup(pinPiezo, GPIO.OUT)
+         #Buzz = GPIO.PWM(pinPiezo, 400) 
+         if distance2 <= 4:
+            dis(distance2)
          
          pwm2.start(3.0)
          pwm2.ChangeDutyCycle(3.0)
@@ -217,10 +222,19 @@ try:
          pwm2.stop()
          
          GPIO.cleanup()
-   
 
-except KeyboardInterrupt:
-   GPIO.cleanup()
+       Dis = round(((12 - distance2)//12)*100)
+       data = {
+          'Label' : Label,
+          'Volume' : Dis
+       }
+       json_data = json.dumps(data)
+       print(json_data)
+
+    except KeyboardInterrupt:
+      GPIO.cleanup()
+
+
 
 
 
